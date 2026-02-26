@@ -1,50 +1,27 @@
 name: Close PRs with Feedback
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
+  workflow_dispatch: {}
 jobs:
   close-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Close PR if it has label "feedback left" and no changes in 7 days
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: pullRequests } = await github.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              base: 'master',
-            });
-
-            for (const pullRequest of pullRequests) {
-              const { data: labels } = await github.issues.listLabelsOnIssue({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pullRequest.number,
-              });
-
-              const feedbackLabel = labels.find((label) => label.name === 'feedback left');
-              if (feedbackLabel) {
-                const lastUpdated = new Date(pullRequest.updated_at);
-                const sevenDaysAgo = new Date();
-                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-                if (lastUpdated < sevenDaysAgo) {
-                  await github.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: pullRequest.number,
-                    body: 'Closing this PR because there has been no activity for the past 7 days. Feel free to reopen if you have any feedback.',
-                  });
-                  await github.pulls.update({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    pull_number: pullRequest.number,
-                    state: 'closed',
-                  });
-                }
-              }
-            }
+    - name: Close PR if it has label "feedback left" and no changes in 7 days
+      uses: actions/github-script@v3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: "const { data: pullRequests } = await github.pulls.list({\n  owner:\
+          \ context.repo.owner,\n  repo: context.repo.repo,\n  state: 'open',\n  base:\
+          \ 'master',\n});\n\nfor (const pullRequest of pullRequests) {\n  const {\
+          \ data: labels } = await github.issues.listLabelsOnIssue({\n    owner: context.repo.owner,\n\
+          \    repo: context.repo.repo,\n    issue_number: pullRequest.number,\n \
+          \ });\n\n  const feedbackLabel = labels.find((label) => label.name === 'feedback\
+          \ left');\n  if (feedbackLabel) {\n    const lastUpdated = new Date(pullRequest.updated_at);\n\
+          \    const sevenDaysAgo = new Date();\n    sevenDaysAgo.setDate(sevenDaysAgo.getDate()\
+          \ - 7);\n\n    if (lastUpdated < sevenDaysAgo) {\n      await github.issues.createComment({\n\
+          \        owner: context.repo.owner,\n        repo: context.repo.repo,\n\
+          \        issue_number: pullRequest.number,\n        body: 'Closing this\
+          \ PR because there has been no activity for the past 7 days. Feel free to\
+          \ reopen if you have any feedback.',\n      });\n      await github.pulls.update({\n\
+          \        owner: context.repo.owner,\n        repo: context.repo.repo,\n\
+          \        pull_number: pullRequest.number,\n        state: 'closed',\n  \
+          \    });\n    }\n  }\n}"
